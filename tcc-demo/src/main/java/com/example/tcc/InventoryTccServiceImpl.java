@@ -4,22 +4,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.util.UUID;
 
 @Service
 public class InventoryTccServiceImpl implements InventoryTccService {
     private static final Logger log = LoggerFactory.getLogger(InventoryTccServiceImpl.class);
     @Autowired InventoryRepository repo;
+    @Autowired IdempotentRecordRepository idempotentRepo;
     @Override
     public boolean tryReserve(Long productId, int count) {
+        String requestId = UUID.randomUUID().toString();
+        if (idempotentRepo.existsById(requestId)) {
+            log.info("Try reserve 幂等返回: requestId={}", requestId);
+            return true;
+        }
         try {
             Inventory inv = repo.findById(productId).orElse(null);
             if (inv != null && inv.getStock() >= count) {
                 inv.setStock(inv.getStock() - count);
                 repo.save(inv);
-                log.info("Try reserve success: productId={}, count={}", productId, count);
+                idempotentRepo.save(new IdempotentRecord(requestId, "success"));
+                log.info("Try reserve success: productId={}, count={}, requestId={}", productId, count, requestId);
                 return true;
             }
-            log.warn("Try reserve failed: productId={}, count={}", productId, count);
+            log.warn("Try reserve failed: productId={}, count={}, requestId={}", productId, count, requestId);
             return false;
         } catch (Exception e) {
             log.error("Try reserve exception", e);
@@ -43,11 +51,7 @@ public class InventoryTccServiceImpl implements InventoryTccService {
             return true;
         } catch (Exception e) {
             log.error("Cancel reserve exception", e);
-        Inventory inv = repo.findById(productId).orElse(null);
-        if (inv != null) {
-            inv.setStock(inv.getStock() + count);
-            repo.save(inv);
+            throw e;
         }
-        return true;
     }
 } 
