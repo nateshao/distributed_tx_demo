@@ -34,4 +34,27 @@ Achieve eventual consistency in distributed transactions via RocketMQ transactio
 
 ## 参考 | Reference
 
-- [RocketMQ事务消息](https://rocketmq.apache.org/docs/transactionmessaging/) 
+- [RocketMQ事务消息](https://rocketmq.apache.org/docs/transactionmessaging/)
+
+---
+
+## 架构流程图 | Architecture Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Producer
+    participant MQ
+    participant LocalDB
+    Client->>Producer: 发送业务请求
+    Producer->>MQ: 发送半消息
+    MQ-->>Producer: 半消息成功
+    Producer->>LocalDB: 执行业务并记录状态
+    MQ->>Producer: 回查本地事务状态
+    alt 已提交
+        Producer-->>MQ: 提交消息
+    else 回滚
+        Producer-->>MQ: 回滚消息
+    end
+    MQ-->>Client: 通知消费端
+``` 

@@ -32,4 +32,24 @@ mvn spring-boot:run
 
 ## 参考 | Reference
 
-- [SAGA模式](https://microservices.io/patterns/data/saga.html) 
+- [SAGA模式](https://microservices.io/patterns/data/saga.html)
+
+---
+
+## 架构流程图 | Architecture Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant SagaOrchestrator
+    participant ServiceA
+    participant ServiceB
+    Client->>SagaOrchestrator: Start Saga
+    SagaOrchestrator->>ServiceA: 执行本地事务A
+    ServiceA-->>SagaOrchestrator: 成功
+    SagaOrchestrator->>ServiceB: 执行本地事务B
+    ServiceB-->>SagaOrchestrator: 失败
+    SagaOrchestrator->>ServiceA: 补偿A
+    ServiceA-->>SagaOrchestrator: 补偿完成
+    SagaOrchestrator-->>Client: Saga失败并补偿
+``` 

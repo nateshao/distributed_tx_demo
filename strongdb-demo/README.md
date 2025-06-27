@@ -35,4 +35,19 @@ Rely on databases like TiDB or CockroachDB that natively support distributed tra
 
 ## 参考 | Reference
 
-- [TiDB官方文档](https://docs.pingcap.com/zh/tidb/stable) 
+- [TiDB官方文档](https://docs.pingcap.com/zh/tidb/stable)
+
+---
+
+## 架构流程图 | Architecture Diagram
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant App
+    participant StrongDB
+    Client->>App: 发起分布式事务
+    App->>StrongDB: 执行多表/多分区操作
+    StrongDB-->>App: 事务提交/回滚
+    App-->>Client: 返回结果
+``` 
